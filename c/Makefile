@@ -1,7 +1,7 @@
 .PHONY=
 
 all: main.c
-	gcc -o main main.c
+	gcc -fno-stack-protector -w -o main main.c
 
 run: all
 	./main
