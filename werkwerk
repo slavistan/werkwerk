@@ -10,31 +10,31 @@ usage() {
 "
 }
 
-
-# initialize a template
-tinit() {
-  
-}
-
 # copy files (always)
 # setup workspace (open editors, browsers ...)
 
 [ "$1" = "-h" ] && usage && exit
 
-# traverse all subdirs, read first line of _setup and get a choice
-choice=$(\
-for module in $(find "$WWD" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
-  sf="$module/_setup"
-  if [ -f "$sf" ]; then
-    printf "$module|"
-    head -1 "$sf" | sed -E 's/^# +//g'
-  fi
-done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
+# traverse all subdirs, read first line of _setup and show dmenu
+module=$(\
+  for subdir in $(find "$WWD" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
+    sf="$subdir/_setup"
+    if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
+      printf "$subdir|"
+      head -1 "$sf" | sed -E 's/^# +//g'
+    fi
+  done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
+[ -z "$module" ] && exit
 
-WHERE=$(mktemp -d -t werkwerk-$choice-XXXXXX)
-echo $WHERE
+outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
 
-# TODO(feat): show dmenu with selections
+# copy template files (omit _setup)
+find "$WWD/$module" -mindepth 1 -maxdepth 1 -not -name _setup -exec cp -r {} "$outdir" \;
+
+# workspace setup
+cd "$outdir"
+source "$WWD/$module/_setup"
+
 # TODO(feat): Rename project to werkwerk
 # TODO(feat): Install templates to $XDG_DATA_HOME/werkwerk
 # TODO(feat): zparseopts for --init-only, --where=...
