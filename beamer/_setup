@@ -1,5 +1,6 @@
 # simple beamer pdf from pandoc md
 
 st zsh -c 'nvim slides.md; zsh -i' &
+make all
+zathura slides.pdf &
 st zsh -c 'make watch; zsh -i' &
-make all && (zathura slides.pdf &)

@@ -2,23 +2,34 @@
 
 set -e
 
-WWD=${0:A:h} # werk directory = Where the templates are found
+[ "$DEBUG" ] && alias logf=printf || logf() {}
 
 usage() {
+#TODO(feat): usage
   printf \
-"TODO
+    "
 "
 }
 
-# copy files (always)
-# setup workspace (open editors, browsers ...)
-
 [ "$1" = "-h" ] && usage && exit
 
-# traverse all subdirs, read first line of _setup and show dmenu
+if [ ! -d "$WERKWERKPATH" ]; then
+  if [ -d /usr/local/share/werkwerk ]; then
+    WERKWERKPATH=/usr/local/share/werkwerk;
+  elif [ -d /usr/share/werkwerk ]; then
+    WERKWERKPATH=/usr/share/werkwerk
+  fi
+fi
+if [ ! -d "$WERKWERKPATH" ]; then
+  # TODO(improvement): Clarify usage and parsing of WERKWERKPATH
+  echo "\$WERKWERKPATH='$WERKWERKPATH' is not a directory."
+  exit 1
+fi
+logf "WERKWERKPATH=$WERKWERKPATH"
+
 module=$(\
-  for subdir in $(find "$WWD" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
-    sf="$subdir/_setup"
+  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
+    sf="$WERKWERKPATH/$subdir/_setup"
     if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
       printf "$subdir|"
       head -1 "$sf" | sed -E 's/^# +//g'
@@ -27,14 +38,17 @@ module=$(\
 [ -z "$module" ] && exit
 
 outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
+logf "outdir = $outdir\n"
 
 # copy template files (omit _setup)
-find "$WWD/$module" -mindepth 1 -maxdepth 1 -not -name _setup -exec cp -r {} "$outdir" \;
+find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup -exec cp -r {} "$outdir" \;
 
 # workspace setup
 cd "$outdir"
-source "$WWD/$module/_setup"
+source "$WERKWERKPATH/$module/_setup"
 
-# TODO(feat): Rename project to werkwerk
+# TODO(feat): Rename github project to werkwerk
 # TODO(feat): Install templates to $XDG_DATA_HOME/werkwerk
 # TODO(feat): zparseopts for --init-only, --where=...
+# TODO(feat): Option to --list all modules (show long description from second comment paragraph)
+# TODO(feat): Exclude all hidden files, not only .git (Don't forget Makefile)
