@@ -1,0 +1,10 @@
+# simple beamer pdf from pandoc md
+
+# OUTPATH, WERKWERKPATH von werkwerk
+
+mkdir -p "$OUTDIR"
+cp -r ${0:A:h}/beamer/* "$outdir"
+cd "$outdir"
+st zsh -c 'nvim slides.md; zsh -i' &
+st zsh -c 'make watch; zsh -i' &
+make all && (zathura slides.pdf &)

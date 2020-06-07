@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+
+set -e
+
+WWD=${0:A:h} # werk directory = Where the templates are found
+
+usage() {
+  printf \
+"TODO
+"
+}
+
+
+# initialize a template
+tinit() {
+  
+}
+
+# copy files (always)
+# setup workspace (open editors, browsers ...)
+
+[ "$1" = "-h" ] && usage && exit
+
+# traverse all subdirs, read first line of _setup and get a choice
+choice=$(\
+for module in $(find "$WWD" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
+  sf="$module/_setup"
+  if [ -f "$sf" ]; then
+    printf "$module|"
+    head -1 "$sf" | sed -E 's/^# +//g'
+  fi
+done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
+
+WHERE=$(mktemp -d -t werkwerk-$choice-XXXXXX)
+echo $WHERE
+
+# TODO(feat): show dmenu with selections
+# TODO(feat): Rename project to werkwerk
+# TODO(feat): Install templates to $XDG_DATA_HOME/werkwerk
+# TODO(feat): zparseopts for --init-only, --where=...
