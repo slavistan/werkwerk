@@ -38,7 +38,7 @@ case "$1" in
     echo "$INFILE\n$0" | CODEBRAID=$CODEBRAID entr -cr ./compile.sh
     ;;
   clean)
-    rm -rf "$INFILE" "$0" "_codebraid"
+    rm -rf "$OUTFILE" "_codebraid"
     ;;
   *)
     timestamp="[$(date '+%H:%M:%S')]:"
