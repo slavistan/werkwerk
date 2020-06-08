@@ -47,8 +47,6 @@ find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup -exec cp 
 cd "$outdir"
 source "$WERKWERKPATH/$module/_setup"
 
-# TODO(feat): Rename github project to werkwerk
-# TODO(feat): Install templates to $XDG_DATA_HOME/werkwerk
 # TODO(feat): zparseopts for --init-only, --where=...
 # TODO(feat): Option to --list all modules (show long description from second comment paragraph)
 # TODO(feat): Exclude all hidden files, not only .git (Don't forget Makefile)
