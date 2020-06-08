@@ -21,7 +21,7 @@ if [ ! -d "$WERKWERKPATH" ]; then
   fi
 fi
 if [ ! -d "$WERKWERKPATH" ]; then
-  # TODO(improvement): Clarify usage and parsing of WERKWERKPATH
+  # TODO(fix): Clarify usage and parsing of WERKWERKPATH
   echo "\$WERKWERKPATH='$WERKWERKPATH' is not a directory."
   exit 1
 fi
