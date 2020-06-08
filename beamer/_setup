@@ -1,6 +1,17 @@
-# simple beamer pdf from pandoc md
+# pandoc md -> beamer (w/ codebraid)
+#
+# Requires texlive and codebraid.
 
+# prompt for codebraid usage
+[ $(echo "Yes\nNo/Cancel" | dmenu -p "Compile w/ codebraid?") = "Yes" ] && flag="--codebraid"
+
+# edit md
 st zsh -c 'nvim slides.md; zsh -i' &
-make all
-zathura slides.pdf &
-st zsh -c 'make watch; zsh -i' &
+
+# preview pdf (zathura re-loads on file change)
+# create empty pdf so zathura can be started immediately
+echo | groff -T pdf > slides.pdf
+zathura --fork slides.pdf
+
+# watch and recompile
+st zsh -c "./compile.sh $flag watch; zsh -i" &

@@ -1,7 +1,7 @@
 # TODO(feat): allow PREFIX to be set by user
 PREFIX=/usr/local
 
-install:
+install: uninstall
 	mkdir -p $(PREFIX)/share/werkwerk
 	find '.' -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec cp -R {} $(PREFIX)/share/werkwerk \;
 	mkdir -p $(PREFIX)/bin
