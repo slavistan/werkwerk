@@ -28,7 +28,7 @@ compile() {
 
 [ ! "$INFILE" ] && INFILE="slides.md"
 [ ! "$OUTFILE" ] && OUTFILE="slides.pdf"
-[ "$1" = "--codebraid" ] CODEBRAID=1 && shift
+[ "$1" = "--codebraid" ] && CODEBRAID=1 && shift
 
 case "$1" in
   -h|--help|help)
