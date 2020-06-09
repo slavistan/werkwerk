@@ -3,7 +3,7 @@
 # Requires texlive and codebraid.
 
 # prompt for codebraid usage
-[ $(echo "Yes\nNo/Cancel" | dmenu -p "Compile w/ codebraid?") = "Yes" ] && flag="--codebraid"
+[ $(echo "Yes\nNo/Cancel" | dmenu -p "Compile w/ codebraid?") = "Yes" ] && flag="-c"
 
 # edit md
 st zsh -c 'nvim slides.md; zsh -i' &
