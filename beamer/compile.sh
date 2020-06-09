@@ -38,11 +38,38 @@ compile() {
   if [ ! "$VERBOSE" ]; then
     export PYTHONWARNINGS=ignore
   fi
- "$pre" pandoc "$INFILE" --pdf-engine=xelatex -t beamer -o "$OUTFILE" $post 2>&1
+ $pre pandoc "$INFILE" --pdf-engine=xelatex -t beamer -o "$OUTFILE" $post 2>&1
+}
+
+cleanup() {
+  kill "$SPIN_PID" >/dev/null 2>&1
+}
+
+togglespinner() {
+  [ "$SPIN" = "1" ] && SPIN=0 || SPIN=1
+
+  if [ "$SPIN" = "1" ]; then
+    (
+    chars='-/|\'
+    while :; do
+      for ii in $(seq 1 4); do
+        printf "\010"
+        printf -- "$chars" | cut -b "$ii" | tr -d '\n'
+        sleep "0.1s"
+      done
+    done
+    ) &
+    SPIN_PID=$!
+  else
+    printf "\010 "
+    kill $SPIN_PID
+  fi
 }
 
 [ ! "$INFILE" ] && INFILE="slides.md"
 [ ! "$OUTFILE" ] && OUTFILE="slides.pdf"
+
+trap cleanup 0 1 2 15
 
 case "$1" in
   -h|--help|help)
@@ -57,15 +84,19 @@ case "$1" in
     [ $CODEBRAID ] && printf " -c"
     [ $VERBOSE ] && printf " -v"
     printf ") ... "
-    # Start spinner here
-    tstart=$(date '+%s')
+    togglespinner
     if output=$(compile); then
-      printf "done in $(expr $(date '+%s') - $tstart)s! Output: '\033[3m$OUTFILE\033[0m'\n"
+      togglespinner
+      printf "success \033[1;32m✔\033[0;1m File: '\033[3m$OUTFILE\033[0m'\n"
     else
       err=1
-      printf "error after $(expr $(date '+%s') - $tstart)s!"
+      togglespinner
+      printf "fail \033[1;31m✖\033[0;1m\n"
     fi
-    [ "$output" ] && printf "$timestamp Produced the following output:\n\033[0m$output"
+    if [ "$output" ]; then
+      printf "$timestamp Produced the following ouput:\n\033[0m"
+      printf "$output" | sed 's/^/'"$timestamp"' /g'
+    fi
     printf "\033[0m"
     if [ "$err" ]; then exit 1; fi
     ;;
