@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -e
+
 usage() {
   printf \
 "Compiler script. Usage:
@@ -31,37 +33,55 @@ compile() {
     pre="codebraid"
     post="--overwrite"
   fi
-  $pre pandoc "$INFILE" --pdf-engine=xelatex -t beamer -o "$OUTFILE" $post 2>&1
+  if [ ! "$VERBOSE" ]; then
+    export PYTHONWARNINGS=ignore
+  fi
+ "$pre" pandoc "$INFILE" --pdf-engine=xelatex -t beamer -o "$OUTFILE" $post 2>&1
 }
 
 [ ! "$INFILE" ] && INFILE="slides.md"
 [ ! "$OUTFILE" ] && OUTFILE="slides.pdf"
-[ "$1" = "--codebraid" ] && CODEBRAID=1 && shift
 
 case "$1" in
   -h|--help|help)
     usage
     ;;
-  watch)
-    echo "$INFILE\n$0" | CODEBRAID=$CODEBRAID entr -cr ./compile.sh
-    ;;
   clean)
     rm -rf "$OUTFILE" "_codebraid"
     ;;
-  *)
+  __compile)
     timestamp="[$(date '+%H:%M:%S')]:"
-    printf "\033[1m$timestamp Compiling"
-    [ $CODEBRAID ] && printf " (w/ codebraid)"
-    printf " ... "
-    tstart=$(date '+%S')
+    printf "\033[1m$timestamp Compiling (w/ opt:"
+    [ $CODEBRAID ] && printf " -c"
+    [ $VERBOSE ] && printf " -v"
+    printf ") ... "
+    tstart=$(date '+%s')
     if output=$(compile); then
-      printf "done in $(expr $(date '+%S') - $tstart)s! Output: '\033[3m$OUTFILE\033[0m'\n"
+      printf "done in $(expr $(date '+%s') - $tstart)s! Output: '\033[3m$OUTFILE\033[0m'\n"
     else
       err=1
-      printf "error after $(expr $(date '+%S') - $t)s!"
+      printf "error after $(expr $(date '+%s') - $tstart)s!"
     fi
     [ "$output" ] && printf "$timestamp Produced the following output:\n\033[0m$output"
-    printf "\033[0m\n"
+    printf "\033[0m"
     if [ "$err" ]; then exit 1; fi
+    ;;
+  __watch)
+    echo "$INFILE\n$0" | CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE entr -cr ./compile.sh __compile
+    ;;
+  *)
+    for opt in "$@"; do
+      [ "$opt" = "--watch" ] && opt=-w
+      [ "$opt" = "--codebraid" ] && opt=-c
+      [ "$opt" = "--verbose" ] && opt=-v
+      printf -- "$opt" | grep -qE '^-.*c.*$' && CODEBRAID=1
+      printf -- "$opt" | grep -qE '^-.*v.*$' && VERBOSE=1
+      printf -- "$opt" | grep -qE '^-.*w.*$' && WATCH=1
+    done
+    if [ "$WATCH" ]; then
+      CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE $0 __watch
+    else
+      CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE $0 __compile
+    fi
     ;;
 esac
