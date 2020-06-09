@@ -14,6 +14,8 @@ usage() {
 \t\t\033[1;3m-c | --codebraid\033[0m - use codebraid
 \t\t\033[1;3m-v | --verbose\033[0m   - print additional information
 
+\t\tShort options can be collated, e.g. \033[1;3m-cv\033[0m or \033[1;3m-wvc\033[0m.
+
 
 \t(2) Clear cache and remove temporaries.
 
@@ -55,6 +57,7 @@ case "$1" in
     [ $CODEBRAID ] && printf " -c"
     [ $VERBOSE ] && printf " -v"
     printf ") ... "
+    # Start spinner here
     tstart=$(date '+%s')
     if output=$(compile); then
       printf "done in $(expr $(date '+%s') - $tstart)s! Output: '\033[3m$OUTFILE\033[0m'\n"
