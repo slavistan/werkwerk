@@ -2,19 +2,27 @@
 
 usage() {
   printf \
-"Usage:
-  $0 [--codebraid]
-    One-shot compile. Optionally, enable compilation with codebraid.
+"Compiler script. Usage:
 
-  $0 [--codebraid] watch
-    Recompile when source files change. Optionally, enable compilation with
-    codebraid.
+\t(1) Compile markdown to beamer pdf.
 
-  $0 clean
-    Remove output and temporary files.
+\t\033[1m$0 \033[1;3m[OPTIONS]...\033[0m
 
-  $0 help | -h | --help
-    Show usage.
+\t\t\033[1;3m-w | --watch\033[0m     - recompile when source files change
+\t\t\033[1;3m-c | --codebraid\033[0m - use codebraid
+\t\t\033[1;3m-v | --verbose\033[0m   - print additional information
+
+
+\t(2) Clear cache and remove temporaries.
+
+\t\033[1m$0 clean\033[0m
+
+
+\t(3) Show usage.
+
+\t\033[1m$0 help\033[0m
+\t\033[1m$0 --help\033[0m
+\t\033[1m$0 -h\033[0m
 "
 }
 
