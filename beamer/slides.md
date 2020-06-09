@@ -46,12 +46,6 @@ int main(int argc, char** argv) {
 }
 ```
 
-```{.c emphasize=2-2}
-int maino() a
-asdasdsaddas
-asdasdsaddas
-```
-
 ## Codebraid
 
 **Codebraid required**. See [Codebraid github](https://github.com/gpoore/codebraid).
