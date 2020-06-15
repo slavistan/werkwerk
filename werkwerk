@@ -51,3 +51,4 @@ source "$WERKWERKPATH/$module/_setup"
 # TODO(feat): Option to --list all modules (show long description from second comment paragraph)
 # TODO(feat): Exclude all hidden files, not only .git (Don't forget Makefile)
 # TODO(feat): pandoc md -> options
+# TODO(feat): Include setup in compile.sh where possible
