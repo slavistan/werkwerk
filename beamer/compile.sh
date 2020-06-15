@@ -87,11 +87,11 @@ case "$1" in
     togglespinner
     if output=$(compile); then
       togglespinner
-      printf "success \033[1;32m✔\033[0;1m File: '\033[3m$OUTFILE\033[0m'\n"
+      printf "success \033[1;32m✓\033[0;1m File: '\033[3m$OUTFILE\033[0m'\n"
     else
       err=1
       togglespinner
-      printf "fail \033[1;31m✖\033[0;1m\n"
+      printf "fail \033[1;31m✘\033[0;1m\n"
     fi
     if [ "$output" ]; then
       printf "$timestamp Produced the following ouput:\n\033[0m"
