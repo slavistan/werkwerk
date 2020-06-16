@@ -60,13 +60,9 @@ cleanup() {
   # TODO(fix): Why does zsh's built-in kill abort after an unsuccessful kill attempt?
   #   It looks as if only the first kill command is executed if there is no spinner. Why?
   #   Also, this leads to an infinite trap-loop :( Built-ins are stupid.
-  echo "cleanup ..." > /dev/pts/7
-  echo "kill spinner" > /dev/pts/7
   kill "$SPIN_PID" > /dev/null 2>&1
-  echo "kill watcher" > /dev/pts/7
   pkill -P $WATCH_PID > /dev/null 2>&1 # kill watcher kids
   kill "$WATCH_PID" > /dev/null 2>&1 # kill watcher (entr ..)
-  echo "... done" > /dev/pts/7
 }
 
 togglespinner() {
@@ -141,10 +137,8 @@ case "$1" in
     fi
     (echo "$INFILE\n$0" | COUNTER=$COUNTER CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE entr -r ./compile.sh _compile) &
     WATCH_PID=$!
-    echo "WATCHERPID = $WATCH_PID" > /dev/pts/7
     COUNTER=$(expr $COUNTER "+" 1)
     while :; do
-      echo "waiting for keypress ..." > /dev/pts/7
       read -sk 1
       case $REPLY in
         q) exit;;
@@ -166,12 +160,9 @@ case "$1" in
         " ")
           cleanup
           COUNTER=$COUNTER CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE exec $0 watch
-          echo "spaced" > /dev/pts/7
           ;;
       esac
-      echo "key = $REPLY" > /dev/pts/7
     done
-    echo "left loop" > /dev/pts/7
     ;;
   _compile)
     clear
