@@ -66,8 +66,8 @@ togglespinner() {
   fi
 }
 
-[ ! "$INFILE" ] && INFILE="slides.md"
-[ ! "$OUTFILE" ] && OUTFILE="slides.pdf"
+[ ! "$INFILE" ] && INFILE="markdown.md"
+[ ! "$OUTFILE" ] && OUTFILE="output.pdf"
 
 trap cleanup 0 1 2 15
 
@@ -77,6 +77,20 @@ case "$1" in
     ;;
   clean)
     rm -rf "$OUTFILE" "_codebraid"
+    ;;
+  setup)
+    [ $(echo "Yes\nNo/Cancel" | dmenu -p "Compile w/ codebraid?") = "Yes" ] && flag="-c"
+
+    # edit md
+    st zsh -c 'nvim markdown.md; zsh -i' &
+
+    # preview pdf (zathura re-loads on file change)
+    # create empty pdf so zathura can be started immediately
+    echo | groff -T pdf > output.pdf
+    zathura --fork output.pdf
+
+    # watch and recompile
+    st zsh -c "./compile.sh $flag -w; zsh -i" &
     ;;
   __compile)
     timestamp="[$(date '+%H:%M:%S')]:"
