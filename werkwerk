@@ -30,10 +30,10 @@ logf "WERKWERKPATH=$WERKWERKPATH"
 module=$(\
   # TODO(perf): use -print '%p' instead of -exec basename
   for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
-    sf="$WERKWERKPATH/$subdir/_setup"
+    sf="$WERKWERKPATH/$subdir/_setup.sh"
     if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
       printf "$subdir|"
-      head -1 "$sf" | sed -E 's/^# +//g'
+      grep '^# .*$' "$sf" | head -1 | sed -E 's/^# +//g'
     fi
   done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
 [ -z "$module" ] && exit
@@ -41,12 +41,12 @@ module=$(\
 outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
 logf "outdir = $outdir\n"
 
-# copy template files (omit _setup)
-find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup -exec cp -r {} "$outdir" \;
+# copy template files (omit _setup.sh)
+find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup.sh -exec cp -r {} "$outdir" \;
 
 # workspace setup
 cd "$outdir"
-source "$WERKWERKPATH/$module/_setup"
+"$WERKWERKPATH/$module/_setup.sh"
 
 # TODO(feat): zparseopts for --init-only, --where=...
 # TODO(feat): Option to --list all modules (show long description from second comment paragraph)

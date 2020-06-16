@@ -27,12 +27,17 @@ usage() {
 \t\tShort options can be collated, e.g. \033[1;3m-bv\033[0m.
 
 
-\t(3) Clear cache and remove temporaries.
+\t(3) Set up workspace.
+
+\t\033[1m${TAIL} workspace\033[0m
+
+
+\t(4) Clear cache and remove temporaries.
 
 \t\033[1m${TAIL} clean\033[0m
 
 
-\t(4) Show usage.
+\t(5) Show usage.
 
 \t\033[1m${TAIL} help\033[0m
 \t\033[1m${TAIL} --help\033[0m
@@ -97,6 +102,7 @@ parseargs() {
 }
 
 disable kill # see above todo
+setopt null_glob
 
 [ ! "$INFILE" ] && INFILE="markdown.md"
 [ ! "$OUTFILE" ] && OUTFILE="output.pdf"
@@ -121,12 +127,11 @@ case "$1" in
     parseargs $@
     compile
     ;;
-  setup)
-    [ $(echo "Yes\nNo/Cancel" | dmenu -p "Compile w/ codebraid?") = "Yes" ] && flag="-c"
-    st zsh -c 'nvim markdown.md; zsh -i' &
+  workspace)
+    st zsh -c 'nvim '"$INFILE"'; zsh -i' &
     echo | groff -T pdf > output.pdf
     zathura --fork output.pdf
-    st zsh -c "./compile.sh $flag -w; zsh -i" &
+    st zsh -c "./$TAIL watch -v; zsh -i" &
     ;;
   watch)
     parseargs $@
@@ -196,23 +201,8 @@ case "$1" in
     printf "\033[0m"
     if [ "$err" ]; then exit 1; fi
     ;;
-  --)
-    shift
-    exec $0 $@
-    ;;
   *)
-    for opt in "$@"; do
-      [ "$opt" = "--watch" ] && opt=-w
-      [ "$opt" = "--codebraid" ] && opt=-b
-      [ "$opt" = "--verbose" ] && opt=-v
-      printf -- "$opt" | grep -qE '^-.*c.*$' && CODEBRAID=1
-      printf -- "$opt" | grep -qE '^-.*v.*$' && VERBOSE=1
-      printf -- "$opt" | grep -qE '^-.*w.*$' && WATCH=1
-    done
-    if [ "$WATCH" ]; then
-      CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE exec $0 __watch
-    else
-      CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE exec $0 _compile
-    fi
+    printf "Invalid input. Try running '$TAIL help'.\n"
+    exit 1
     ;;
 esac
