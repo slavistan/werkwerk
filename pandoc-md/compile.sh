@@ -124,7 +124,7 @@ case "$1" in
     compile
     ;;
   workspace)
-    st zsh -c 'nvim '"$INFILE"'; zsh -i' &
+    st zsh -c 'nvim '"$INFILE"' '"$TAIL"'; zsh -i' &
     echo | groff -T pdf > output.pdf
     zathura --fork output.pdf
     st zsh -c "./$TAIL watch -v; zsh -i" &

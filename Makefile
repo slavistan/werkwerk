@@ -1,6 +1,8 @@
 # TODO(feat): allow PREFIX to be set by user
 PREFIX=/usr/local
 
+all:
+
 install: uninstall
 	mkdir -p $(PREFIX)/share/werkwerk
 	find '.' -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec cp -R {} $(PREFIX)/share/werkwerk \;
@@ -12,4 +14,4 @@ uninstall:
 	rm -rf $(PREFIX)/share/werkwerk
 	rm -rf $(PREFIX)/bin/werkwerk
 
-.PHONY: install uninstall
+.PHONY: all install uninstall
