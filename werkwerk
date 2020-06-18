@@ -27,11 +27,6 @@ if [ ! -d "$WERKWERKPATH" ]; then
     exit 1
   fi
 fi
-if [ ! -d "$WERKWERKPATH" ]; then
-  # TODO(fix): Clarify usage and parsing of WERKWERKPATH
-  echo "\$WERKWERKPATH='$WERKWERKPATH' is not a directory."
-  exit 1
-fi
 logf "WERKWERKPATH=$WERKWERKPATH"
 
 module=$(\
@@ -59,4 +54,3 @@ cd "$outdir"
 #               - Display the optional long discription from the _setup files'
 #                 comment block.
 # TODO(feat): pandoc md -> options
-# TODO(feat): Include setup in compile.sh where possible
