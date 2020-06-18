@@ -136,7 +136,7 @@ case "$1" in
       printf "$WATCHLIST\n"
       exit
     fi
-    (echo "$INFILE\n$0" | COUNTER=$COUNTER CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE entr -r ./compile.sh _compile) &
+    (echo "$INFILE\n$0" | COUNTER=$(expr $COUNTER "+" 1) CODEBRAID=$CODEBRAID VERBOSE=$VERBOSE entr -r ./compile.sh _compile) &
     WATCH_PID=$!
     COUNTER=$(expr $COUNTER "+" 1)
     while :; do
