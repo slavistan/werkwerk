@@ -55,7 +55,8 @@ cd "$outdir"
 "$WERKWERKPATH/$module/_setup.sh"
 
 # TODO(feat): zparseopts for --init-only, --where=...
-# TODO(feat): Option to --list all modules (show long description from second comment paragraph)
-# TODO(feat): Exclude all hidden files, not only .git (Don't forget Makefile)
+# TODO(feat): Implement option --list to show all modules and their locations.
+#               - Display the optional long discription from the _setup files'
+#                 comment block.
 # TODO(feat): pandoc md -> options
 # TODO(feat): Include setup in compile.sh where possible
