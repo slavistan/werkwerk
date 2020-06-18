@@ -13,11 +13,18 @@ usage() {
 
 [ "$1" = "-h" ] && usage && exit
 
+# TODO(feat): Make WERKWERKPATH concatenable a la PATH1:PATH2:..
+# TODO(fix): Clarify usage and parsing of WERKWERKPATH
 if [ ! -d "$WERKWERKPATH" ]; then
   if [ -d /usr/local/share/werkwerk ]; then
     WERKWERKPATH=/usr/local/share/werkwerk;
   elif [ -d /usr/share/werkwerk ]; then
     WERKWERKPATH=/usr/share/werkwerk
+  elif [ -d ~/.local/share/werkwerk ]; then
+    WERKWERKPATH=~/.local/share/werkwerk
+  else
+    echo "WERKWERKPATH missing. Abort."
+    exit 1
   fi
 fi
 if [ ! -d "$WERKWERKPATH" ]; then
