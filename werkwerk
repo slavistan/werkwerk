@@ -28,8 +28,7 @@ fi
 logf "WERKWERKPATH=$WERKWERKPATH"
 
 module=$(\
-  # TODO(perf): use -print '%p' instead of -exec basename
-  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec basename {} \;); do
+  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -printf '%f\n'); do
     sf="$WERKWERKPATH/$subdir/_setup.sh"
     if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
       printf "$subdir|"
