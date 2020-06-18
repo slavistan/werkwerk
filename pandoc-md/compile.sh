@@ -200,3 +200,4 @@ case "$1" in
 esac
 
 # TODO(fix): Counter does not increment when entr triggers a reload
+# TODO(fix): Rename this file to. (butler.sh?)
