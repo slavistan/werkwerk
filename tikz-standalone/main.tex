@@ -1,0 +1,21 @@
+\documentclass[tikz]{standalone}
+\usetikzlibrary{fadings,calc,fit,positioning,shadows.blur,arrows.meta,shapes}
+\begin{document}
+
+\def\rA{10cm} % radius outer circle
+\def\rB{0.5*(2*\rA-\offTop-\offBottom)}
+\def\rC{0.5*(2*\rB-\offTop-\offBottom)}
+\def\offTop{\rA*0.60}
+\def\offBottom{0.2cm} % small offset between bottoms of circles
+
+\begin{tikzpicture}
+  \node[anchor=south, circle, fill=blue, draw=white, minimum size=\rA] (CA) at (0, 0) {};
+  \node[anchor=south, circle, fill=gray, draw=white, minimum size=\rB, above=\offBottom of CA.south] (CB) {};
+  \node[anchor=south, circle, fill=orange, draw=white, minimum size=\rC, above=\offBottom of CB.south] (CC) {};
+
+  \node[anchor=center, text=white, align=center, font=\Large] (TA) at ($(CA.north)!0.5!(CB.north)$) {Artificial\\Intelligence};
+  \node[anchor=center, text=white, align=center, font=\Large] (TB) at ($(CB.north)!0.5!(CC.north)$) {Machine\\Learning};
+  \node[anchor=center, text=white, align=center, font=\Large] (TC) at ($(TB.center)-(0,\offTop*0.5)$) {Deep\\Learning};
+\end{tikzpicture}
+
+\end{document}
