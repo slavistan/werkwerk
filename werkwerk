@@ -2,6 +2,8 @@
 
 set -e
 
+# TODO(fix): Enfore that WERKWERKPATH is absolute, or `find' will break somewhere, eventually, maybe.
+
 [ "$DEBUG" ] && alias logf=printf || logf() {}
 
 usage() {
@@ -11,9 +13,47 @@ usage() {
 "
 }
 
+err() { echo "$@" >&2 }
+
+_isabspath() {
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0 PATH
+
+        \r  Returns 0 iff PATH is an absolute path. PATH need not necessarily exist."
+    return
+  fi
+
+  echo "$1" | grep -q '^/' # Silly, I know ...
+}
+
+_commonlines() {
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0 STR1 STR2
+
+        \r  Prints count of common lines between STR1 and STR2. Returns 0 if there
+        \r  exist common lines and 1 otherwise. Common lines may appear at any
+        \r  position and need no share the same line index."
+    return
+  fi
+
+  [ ! "$#" -eq 2 ] && { err "$0: Invalid number of arguments."; return 1; }
+
+  count=0
+  echo "$1" | while read line_a_full; do
+    line_a="$(echo "$line_a_full" | tr -d '\n')"
+    echo "$2" | while read line_b_full; do
+      line_b="$(echo "$line_b_full" | tr -d '\n')"
+      printf "$line_a" | tr -d '\n' | grep -qF "$line_" && count=$(expr $count + 1)
+    done
+  done
+  printf "$count"
+  [ "$count" -eq 0 ] && return 1
+}
+
 [ "$1" = "-h" ] && usage && exit
 
 # TODO(feat): Make WERKWERKPATH concatenable a la PATH1:PATH2:..
+#   - Ignore paths containing colons.
 # TODO(fix): Clarify usage and parsing of WERKWERKPATH
 if [ ! -d "$WERKWERKPATH" ]; then
   if [ -d /usr/local/share/werkwerk ]; then
@@ -29,28 +69,93 @@ if [ ! -d "$WERKWERKPATH" ]; then
 fi
 logf "WERKWERKPATH=$WERKWERKPATH"
 
-module=$(\
-  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -printf '%f\n'); do
-    sf="$WERKWERKPATH/$subdir/_setup.sh"
-    if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
-      printf "$subdir|"
-      grep '^# .*$' "$sf" | head -1 | sed -E 's/^# +//g'
+_ls() {
+  [ "$1" = "-h" ] && { echo "List modules found in \$WERKWERKPATH."; return; }
+
+  echo "$WERKWERKPATH" | tr ':' '\n' | while read wwpath; do
+    [ ! -d "$wwpath" ] && { err "Ignoring non-directory '$wwpath'."; continue; }
+    find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d
+  done
+}
+
+_cp() {
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0 [-f] TEMPLATE TARGET
+
+        \r  Copy files from template to target directory. By default, existing files
+        \r  in the target directory are not overwritten and the copy is rejected
+        \r  as a whole if existing filenames collide. Use the '-f' flag to force
+        \r  overwriting existing files.
+
+        \r  Every file in the template directory is copied except for the '_setup.sh'
+        \r  where it exists. 'TEMPLATE' and 'TARGET' must be absolute paths. 'TARGET'
+        \r  will be created if it does not exist."
+    return
+  fi
+
+  # parse opts & sanity check
+  [ "$1" = "-f" ] && { shift; force=1 }
+  _isabspath "$1" || { err "TEMPLATE '$1' is not an absolute path."; return 1; }
+  _ls | grep -q -F "$1" || { err "TEMPLATE '$1' is not among the templates."; return 1; }
+  _isabspath "$2" || { err "TARGET '$2' is not an absolute path."; return 1; }
+
+  # create target directory, if it does not exist
+  mkdir -p "$2"
+
+  if [ ! "$force" -eq 1 ]; then
+    tocopy="$(find "$1" -type f -mindepth 1 -printf '%P\n')"
+    existing="$(find "$2" -type f -mindepth 1 -printf '%P\n')"
+    echo "$tocopy"
+    echo "---"
+    echo "$existing"
+    if _commonlines "$tocopy" "$existing" ; then
+      err "Won't overwrite existing files. Abort."
+      return 1
     fi
-  done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
-[ -z "$module" ] && exit
+  fi
 
-outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
-logf "outdir = $outdir\n"
+  cp -rf "$1"/* "$2"
+}
 
-# copy template files (omit _setup.sh)
-find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup.sh -exec cp -r {} "$outdir" \;
+# CONTINUEHERE: _commonlines struggles with empty lines
+set -- -- _commonlines "A" "B\nA"
+# set -- cp /usr/local/share/werkwerk/c /tmp/werkwerk/c
 
-# workspace setup
-cd "$outdir"
-"$WERKWERKPATH/$module/_setup.sh"
+
+#module=$(\
+#  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -printf '%f\n'); do
+#    sf="$WERKWERKPATH/$subdir/_setup.sh"
+#    if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
+#      printf "$subdir|"
+#      grep '^# .*$' "$sf" | head -1 | sed -E 's/^# +//g'
+#    fi
+#  done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
+#[ -z "$module" ] && exit
+#
+#outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
+#logf "outdir = $outdir\n"
+#
+## copy template files (omit _setup.sh)
+#find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup.sh -exec cp -r {} "$outdir" \;
+#
+## workspace setup
+#cd "$outdir"
+#"$WERKWERKPATH/$module/_setup.sh"
 
 # TODO(feat): zparseopts for --init-only, --where=...
 # TODO(feat): Implement option --list to show all modules and their locations.
 #               - Display the optional long discription from the _setup files'
 #                 comment block.
 # TODO(feat): pandoc md -> options
+
+case "$1" in
+  ls) _ls ;;
+  cp)
+    shift
+    _cp "$@"
+    ;;
+  --)
+    shift
+    "$@"
+    ;;
+esac
