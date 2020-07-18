@@ -1,9 +1,16 @@
 #!/usr/bin/env zsh
 
+### Settings
+
+# RE to enfore sane path names to keep the script simple. Applies to workspace
+# template directories and their subdirectories. Usage along the lines of
+# grep -q "$PATH_RE" && { _err "Invalid Path."; }
+PATH_RE=':\|\s'
+
+
+### Helpers
+
 MYNAME=${0:A:t}
-
-# Helpers
-
 _err() {
   echo "$@" >&2;
 }
@@ -32,7 +39,8 @@ _no_common_lines() {
   return 1
 }
 
-# Core functionality
+
+### Core functionality
 
 _usage() {
   echo "Usage: $MYNAME [OPTION...]
@@ -44,30 +52,47 @@ _usage() {
     "
 }
 _ls() {
-  [ "$1" = "-h" ] && { echo "List modules found in \$WERKWERKPATH."; return; }
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0
 
-  # Build colon-sep'd list of workspace template directories
-  wwpaths=
+        \r  List all workspace templates. By default, displays all subdirectories found
+        \r  in '/usr/share/werkwerk/', '/usr/local/share/werkwerk/' and
+        \r  '~/.local/share/werkwerk/'. To include additional template directories add
+        \r  their paths to '~/.config/werkwerk/werkwerkrc', one path per line. Empty
+        \r  lines and lines starting with '#' are ignored.
+
+        \r  '~' in paths found in werkwerkrc are translated to the corresponding HOMEs.
+        \r  Environment variables in the paths do not work yet."
+    return
+    # TODO(feat): '-l' flag for more info
+    #   Might show digest from _setup.sh and list of files in template.
+  fi
+
+  # Build \n-sep'd list of workspace template directories
+  wwpaths=""
   for wwpath in /usr/share/werkwerk/ /usr/local/share/werkwerk ~/.local/share/werkwerk; do
-    [ -d "$wwpath" ] && wwpaths+="$wwpath:"
+    [ -d "$wwpath" ] && wwpaths+="$wwpath\n"
   done
   if [ -f ~/.config/werkwerk/werkwerkrc ]; then
     cat ~/.config/werkwerk/werkwerkrc | while read line; do
       echo "$line" | grep -q '^#\|^\s*$' && continue
       # filter proper paths
+      # TODO(feat): Shell-expand lines from werkwerkrc to allow for envvars.
       line=$(echo "$line" | sed 's:~:'"$HOME"':g')
-      echo "$line" | grep -q ':' && { _err "Ignoring invalid path '$line'."; continue; }
+      echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
       [ ! -d "$line" ] && { _err "Ignoring non-existent path '$line'."; continue; }
-      wwpaths+="$line:"
+      wwpaths+="$line\n"
     done
   fi
-  wwpaths=$(echo "$wwpaths" | sed 's/:$//g')
+  wwpaths=$(echo "$wwpaths" | grep -v '^$' | sort | uniq)
 
-  # TODO(feat): '-l' flag for more info
-  #   Might show digest from _setup.sh and list of files in template.
-  echo "$wwpaths" | tr ':' '\n' | while read wwpaths; do
-    [ ! -d "$wwpaths" ] && { _err "Ignoring non-directory '$wwpaths'."; continue; }
-    find "$wwpaths" -maxdepth 1 -mindepth 1 -type d
+  # List all the template directories' subdirectories and enforce simple naming
+  # rules (no whitespaces, no colons) in order to keep parsing simple.
+  echo "$wwpaths" | while read wwpath; do
+    find "$wwpath" -maxdepth 1 -mindepth 1 -type d | while read line; do
+      echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
+      echo "$line"
+    done
   done
 }
 _cp() {
@@ -141,7 +166,6 @@ _startup() {
 
 set -- ls
 
-
 case "$1" in
   -h|--help) _usage ;;
   ls) _ls ;;
@@ -154,7 +178,6 @@ case "$1" in
     "$@"
     ;;
   *)
+    # CONTNUEHERE: Nekkid werkwerk: dmenu + tmp
     ;;
 esac
-
-# TODO(fix): Enfore that WERKWERKPATH is absolute, or `find' will break somewhere, eventually, maybe.
