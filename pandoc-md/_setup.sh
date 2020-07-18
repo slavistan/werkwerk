@@ -2,6 +2,9 @@
 
 # pandoc md -> beamer (w/ codebraid)
 #
-# Requires texlive and codebraid.
+# Long description ... across multiple lines
+# containing description of stages.
 
 ./compile.sh workspace
+
+# TODO(feat): Allow Beamer and HTML output.

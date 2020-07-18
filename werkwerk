@@ -1,20 +1,12 @@
 #!/usr/bin/env zsh
 
-set -e
+MYNAME=${0:A:t}
 
-# TODO(fix): Enfore that WERKWERKPATH is absolute, or `find' will break somewhere, eventually, maybe.
+# Helpers
 
-[ "$DEBUG" ] && alias logf=printf || logf() {}
-
-usage() {
-#TODO(feat): usage
-  printf \
-    "
-"
+_err() {
+  echo "$@" >&2;
 }
-
-err() { echo "$@" >&2 }
-
 _isabspath() {
   if [ "$1" = "-h" ]; then
     echo "Usage: $0 PATH
@@ -25,59 +17,59 @@ _isabspath() {
 
   echo "$1" | grep -q '^/' # Silly, I know ...
 }
-
-_commonlines() {
+_no_common_lines() {
   if [ "$1" = "-h" ]; then
     echo "Usage: $0 STR1 STR2
 
-        \r  Prints count of common lines between STR1 and STR2. Returns 0 if there
-        \r  exist common lines and 1 otherwise. Common lines may appear at any
-        \r  position and need no share the same line index."
+        \r Returns 0 if strings STR1 and STR2 do not have any lines in common,
+        \r 1 otherwise."
     return
   fi
 
-  [ ! "$#" -eq 2 ] && { err "$0: Invalid number of arguments."; return 1; }
-
-  count=0
-  echo "$1" | while read line_a_full; do
-    line_a="$(echo "$line_a_full" | tr -d '\n')"
-    echo "$2" | while read line_b_full; do
-      line_b="$(echo "$line_b_full" | tr -d '\n')"
-      printf "$line_a" | tr -d '\n' | grep -qF "$line_" && count=$(expr $count + 1)
-    done
-  done
-  printf "$count"
-  [ "$count" -eq 0 ] && return 1
+  if [ $(comm -12 <( echo "$1" | sort ) <( echo "$2" | sort ) | wc -l) -eq 0 ]; then
+    return 0
+  fi
+  return 1
 }
 
-[ "$1" = "-h" ] && usage && exit
+# Core functionality
 
-# TODO(feat): Make WERKWERKPATH concatenable a la PATH1:PATH2:..
-#   - Ignore paths containing colons.
-# TODO(fix): Clarify usage and parsing of WERKWERKPATH
-if [ ! -d "$WERKWERKPATH" ]; then
-  if [ -d /usr/local/share/werkwerk ]; then
-    WERKWERKPATH=/usr/local/share/werkwerk;
-  elif [ -d /usr/share/werkwerk ]; then
-    WERKWERKPATH=/usr/share/werkwerk
-  elif [ -d ~/.local/share/werkwerk ]; then
-    WERKWERKPATH=~/.local/share/werkwerk
-  else
-    echo "WERKWERKPATH missing. Abort."
-    exit 1
-  fi
-fi
-logf "WERKWERKPATH=$WERKWERKPATH"
+_usage() {
+  echo "Usage: $MYNAME [OPTION...]
 
+      \r  -f | --force          - Overwrite existing files
+      \r  -i | --interactive    - Choose workspace interactively
+      \r  -w | --workspace PATH - Full path to workspace directory
+      \r  -o |
+    "
+}
 _ls() {
   [ "$1" = "-h" ] && { echo "List modules found in \$WERKWERKPATH."; return; }
 
-  echo "$WERKWERKPATH" | tr ':' '\n' | while read wwpath; do
-    [ ! -d "$wwpath" ] && { err "Ignoring non-directory '$wwpath'."; continue; }
-    find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d
+  # Build colon-sep'd list of workspace template directories
+  wwpaths=
+  for wwpath in /usr/share/werkwerk/ /usr/local/share/werkwerk ~/.local/share/werkwerk; do
+    [ -d "$wwpath" ] && wwpaths+="$wwpath:"
+  done
+  if [ -f ~/.config/werkwerk/werkwerkrc ]; then
+    cat ~/.config/werkwerk/werkwerkrc | while read line; do
+      echo "$line" | grep -q '^#\|^\s*$' && continue
+      # filter proper paths
+      line=$(echo "$line" | sed 's:~:'"$HOME"':g')
+      echo "$line" | grep -q ':' && { _err "Ignoring invalid path '$line'."; continue; }
+      [ ! -d "$line" ] && { _err "Ignoring non-existent path '$line'."; continue; }
+      wwpaths+="$line:"
+    done
+  fi
+  wwpaths=$(echo "$wwpaths" | sed 's/:$//g')
+
+  # TODO(feat): '-l' flag for more info
+  #   Might show digest from _setup.sh and list of files in template.
+  echo "$wwpaths" | tr ':' '\n' | while read wwpaths; do
+    [ ! -d "$wwpaths" ] && { _err "Ignoring non-directory '$wwpaths'."; continue; }
+    find "$wwpaths" -maxdepth 1 -mindepth 1 -type d
   done
 }
-
 _cp() {
   if [ "$1" = "-h" ]; then
     echo "Usage: $0 [-f] TEMPLATE TARGET
@@ -93,69 +85,76 @@ _cp() {
     return
   fi
 
-  # parse opts & sanity check
-  [ "$1" = "-f" ] && { shift; force=1 }
-  _isabspath "$1" || { err "TEMPLATE '$1' is not an absolute path."; return 1; }
-  _ls | grep -q -F "$1" || { err "TEMPLATE '$1' is not among the templates."; return 1; }
-  _isabspath "$2" || { err "TARGET '$2' is not an absolute path."; return 1; }
+  # parse opts
+  [ "$1" = "-f" ] && { shift; force=1; }
+
+  # health check
+  _isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
+  _ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
+  _isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
 
   # create target directory, if it does not exist
   mkdir -p "$2"
 
+  # check for file collisions and abort
   if [ ! "$force" -eq 1 ]; then
-    tocopy="$(find "$1" -type f -mindepth 1 -printf '%P\n')"
-    existing="$(find "$2" -type f -mindepth 1 -printf '%P\n')"
-    echo "$tocopy"
-    echo "---"
-    echo "$existing"
-    if _commonlines "$tocopy" "$existing" ; then
-      err "Won't overwrite existing files. Abort."
+    tocopy="$(find "$1" -mindepth 1 -type f -printf '%P\n')"
+    existing="$(find "$2" -mindepth 1 -type f -printf '%P\n')"
+    if ! _no_common_lines "$tocopy" "$existing"; then
+      _err "Won't overwrite existing files. Abort."
       return 1
     fi
   fi
 
   cp -rf "$1"/* "$2"
 }
+_startup() {
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0 [-s STAGES] TEMPLATE TARGET
 
-# CONTINUEHERE: _commonlines struggles with empty lines
-set -- -- _commonlines "A" "B\nA"
-# set -- cp /usr/local/share/werkwerk/c /tmp/werkwerk/c
+        \r  Execute startup stages for workspace template TEMPLATE in target directory
+        \r  TARGET: If the workspace template contains a file name '_startup.sh', the
+        \r  file is shell-executed inside the target directory for every value in the
+        \r  comma-sep'd STAGES list, which is passed as argument. By default, STAGES
+        \r  is '1,2'.
 
+        \r  Example: The default '$0 -s 1,2 \$TEMPLATE \$TARGET' will execute
+        \r           > ( cd \$TARGET; sh \$TEMPLATE/_setup.sh 1; )
+        \r           > ( cd \$TARGET; sh \$TEMPLATE/_setup.sh 2; )"
+    return
+  fi
 
-#module=$(\
-#  for subdir in $(find "$WERKWERKPATH" -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -printf '%f\n'); do
-#    sf="$WERKWERKPATH/$subdir/_setup.sh"
-#    if [ -f "$sf" ] && grep -q '^# ' "$sf"; then
-#      printf "$subdir|"
-#      grep '^# .*$' "$sf" | head -1 | sed -E 's/^# +//g'
-#    fi
-#  done | column -t -s '|' | dmenu -l 10 -p "Setup which template?:" | cut -d ' ' -f 1)
-#[ -z "$module" ] && exit
-#
-#outdir=$(mktemp -d -t werkwerk-$module-XXXXXX)
-#logf "outdir = $outdir\n"
-#
-## copy template files (omit _setup.sh)
-#find "$WERKWERKPATH/$module" -mindepth 1 -maxdepth 1 -not -name _setup.sh -exec cp -r {} "$outdir" \;
-#
-## workspace setup
-#cd "$outdir"
-#"$WERKWERKPATH/$module/_setup.sh"
+  # parse opts & sanity check
+  [ "$1" = "-s" ] && { stages="$2"; shift 2 } || stages="1,2"
 
-# TODO(feat): zparseopts for --init-only, --where=...
-# TODO(feat): Implement option --list to show all modules and their locations.
-#               - Display the optional long discription from the _setup files'
-#                 comment block.
-# TODO(feat): pandoc md -> options
+  # health check
+  _isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
+  _ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
+  _isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
+
+  if ls "$1/_setup.sh" >/dev/null 2>&1; then
+    echo "$stages" | tr ',' '\n' | while read arg; do
+      ( cd $2; sh $1/_setup.sh $arg; )
+    done
+  fi
+}
+
+set -- ls
+
 
 case "$1" in
+  -h|--help) _usage ;;
   ls) _ls ;;
   cp)
     shift
     _cp "$@"
     ;;
-  --)
+  @)
     shift
     "$@"
     ;;
+  *)
+    ;;
 esac
+
+# TODO(fix): Enfore that WERKWERKPATH is absolute, or `find' will break somewhere, eventually, maybe.
