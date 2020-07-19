@@ -49,10 +49,7 @@ _no_common_lines() {
 _usage() {
   echo "Usage: $MYNAME [OPTION...]
 
-      \r  -f | --force          - Overwrite existing files
-      \r  -i | --interactive    - Choose workspace interactively
-      \r  -w | --workspace PATH - Full path to workspace directory
-      \r  -o |
+  TODO(feat): Type out usage.
     "
 }
 _ls() {
@@ -97,7 +94,7 @@ _ls() {
       echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
       if [  "$list_all" -eq 1 ]; then
         { echo "$line"
-          head -1 "$line/$WS_SETUP" 2>/dev/null || echo "No description found." } |
+          sed '1,1 s/^#\s*//g;q' "$line/$WS_SETUP" 2>/dev/null || echo "No description found." } |
         paste -d ':' - -
       else
         echo "$line"
@@ -201,13 +198,12 @@ case "$1" in
     fi
     if [ "$target[2]" = "" ]; then
       target[2]=$(mktemp -d -t "${MYNAME}_XXXXXX")
+    else
+      mkdir -p "$target[2]" || { _err Cannot create directory '"$target[2]"'.; return 1; }
+      target[2]=$(realpath "$target[2]")
     fi
-    echo "stages = '$stages[2]'"
-    echo "flags = '$flags'"
-    echo "template = '$template[2]'"
-    echo "target = '$target[2]'"
 
     { [[ "$flags" =~ 'f' ]] && _cp -f "$template[2]" "$target[2]" || _cp "$template[2]" "$target[2]" } &&
-    { _startup -s "$stages[2]" "$template[2]" "$target[2]" }
+    { _startup -s "$stages[2]" "$template[2]" "$target[2]" } || return 1
     ;;
 esac
