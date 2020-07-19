@@ -68,8 +68,6 @@ _ls() {
         \r  '~' in paths found in werkwerkrc are translated to the corresponding HOMEs.
         \r  Environment variables in the paths do not work yet."
     return
-    # TODO(feat): '-l' flag for more info
-    #   Might show digest from $WS_SETUP and list of files in template.
   fi
 
   [ "$1" = "-l" ] && { shift; list_all=1; }
@@ -150,10 +148,10 @@ _startup() {
     echo "Usage: $0 [-s STAGES] TEMPLATE TARGET
 
         \r  Execute startup stages for workspace template TEMPLATE in target directory
-        \r  TARGET: If the workspace template contains a file name '_startup.sh', the
+        \r  TARGET: If the workspace template contains a file name '$WC_SETUP', the
         \r  file is shell-executed inside the target directory for every value in the
         \r  comma-sep'd STAGES list, which is passed as argument. By default, STAGES
-        \r  is '1,2'.
+        \r  is '1,2'. '-s ""' results in no execution of '$WC_SETUP'.
 
         \r  Example: The default '$0 -s 1,2 \$TEMPLATE \$TARGET' will execute
         \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP 1; )
@@ -171,17 +169,45 @@ _startup() {
 
   if ls "$1/$WS_SETUP" >/dev/null 2>&1; then
     echo "$stages" | tr ',' '\n' | while read arg; do
+      [ "$stages" = "" ] && continue
       ( cd $2; sh $1/$WS_SETUP $arg; )
     done
   fi
+}
+_interactive() {
+  if [ "$1" = "-h" ]; then
+    echo "Usage: $0
+
+        \r  Let user choose a workspace template from a dmenu selection."
+    return
+  fi
+
+  _ls -l | dmenu -l 15 -i -p 'Select template: ' | cut -d ' ' -f 1 ||
+    { _err 'Aborted by user.'; return 1; }
 }
 
 case "$1" in
   -h|--help) _usage ;;
   ls) shift; _ls "$@" ;;
-  cp) shift; _cp "$@" ;;
   @) shift; "$@" ;;
   *)
-    # CONTNUEHERE: Nekkid werkwerk: dmenu + tmp
+    local -a stages; stages=( -s "1,2" )
+    local -a template; template=( -t )
+    local -a flags; flags=( )
+    local -a target; target=( -g )
+    zparseopts -K -- t:=template s:=stages f=flags g:=target || return 1
+    if [ "$template[2]" = "" ]; then
+      template[2]=$(_interactive) || return 1
+    fi
+    if [ "$target[2]" = "" ]; then
+      target[2]=$(mktemp -d -t "${MYNAME}_XXXXXX")
+    fi
+    echo "stages = '$stages[2]'"
+    echo "flags = '$flags'"
+    echo "template = '$template[2]'"
+    echo "target = '$target[2]'"
+
+    { [[ "$flags" =~ 'f' ]] && _cp -f "$template[2]" "$target[2]" || _cp "$template[2]" "$target[2]" } &&
+    { _startup -s "$stages[2]" "$template[2]" "$target[2]" }
     ;;
 esac
