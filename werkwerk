@@ -2,7 +2,7 @@
 
 ### Settings
 
-# RE to enfore sane path names to keep the script simple. Applies to workspace
+# RE to enforce sane path names to keep the script simple. Applies to workspace
 # template directories and their subdirectories. Usage along the lines of
 # grep -q "$PATH_RE" && { _err "Invalid Path."; }
 PATH_RE=':\|\s'
@@ -79,7 +79,7 @@ _ls() {
       echo "$line" | grep -q '^#\|^\s*$' && continue
       # filter proper paths
       # TODO(feat): Shell-expand lines from werkwerkrc to allow for envvars.
-      line=$(echo "$line" | sed 's:~:'"$HOME"':g')
+      line=$(echo "$line" | sed 's:^~:'"$HOME"':g')
       echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
       [ ! -d "$line" ] && { _err "Ignoring non-existent path '$line'."; continue; }
       wwpaths+="$line\n"
@@ -140,24 +140,24 @@ _cp() {
 
   cp -rf "$1"/* "$2"
 }
-_startup() {
+_setup() {
   if [ "$1" = "-h" ]; then
-    echo "Usage: $0 [-s STAGES] TEMPLATE TARGET
+    echo "Usage: $0 [-s [ARG1,ARG2,...]] TEMPLATE TARGET
 
-        \r  Execute startup stages for workspace template TEMPLATE in target directory
+        \r  Execute setup stages for workspace template TEMPLATE in target directory
         \r  TARGET: If the workspace template contains a file name '$WC_SETUP', the
         \r  file is shell-executed inside the target directory for every value in the
-        \r  comma-sep'd STAGES list, which is passed as argument. By default, STAGES
-        \r  is '1,2'. '-s ""' results in no execution of '$WC_SETUP'.
+        \r  comma-sep'd ARG* list, which is passed as \$1. By default, the list is
+        \r  empty.
 
-        \r  Example: The default '$0 -s 1,2 \$TEMPLATE \$TARGET' will execute
-        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP 1; )
-        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP 2; )"
+        \r  Example: The default '$0 -s foo,bar \$TEMPLATE \$TARGET' will execute
+        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP foo; )
+        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP bar; )"
     return
   fi
 
   # parse opts & sanity check
-  [ "$1" = "-s" ] && { stages="$2"; shift 2 } || stages="1,2"
+  [ "$1" = "-s" ] && { stages="$2"; shift 2 } || stages=""
 
   # health check
   _isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
@@ -166,7 +166,6 @@ _startup() {
 
   if ls "$1/$WS_SETUP" >/dev/null 2>&1; then
     echo "$stages" | tr ',' '\n' | while read arg; do
-      [ "$stages" = "" ] && continue
       ( cd $2; sh $1/$WS_SETUP $arg; )
     done
   fi
@@ -188,7 +187,7 @@ case "$1" in
   ls) shift; _ls "$@" ;;
   @) shift; "$@" ;;
   *)
-    local -a stages; stages=( -s "1,2" )
+    local -a stages; stages=( )
     local -a template; template=( -t )
     local -a flags; flags=( )
     local -a target; target=( -g )
@@ -204,6 +203,9 @@ case "$1" in
     fi
 
     { [[ "$flags" =~ 'f' ]] && _cp -f "$template[2]" "$target[2]" || _cp "$template[2]" "$target[2]" } &&
-    { _startup -s "$stages[2]" "$template[2]" "$target[2]" } || return 1
+    { _setup -s "$stages[2]" "$template[2]" "$target[2]" } || return 1
     ;;
 esac
+
+# TODO(feat): fuzzy interactive dmenu search
+# TODO(feat): directory names may contain whitespaces

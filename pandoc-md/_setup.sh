@@ -1,7 +1,5 @@
 # pandoc markdown -> beamer (w/ codebraid)
 
-case "$1" in
-  1) ./compile.sh workspace ;;
-esac
+./compile.sh workspace &
 
 # TODO(feat): Allow Beamer and HTML output.

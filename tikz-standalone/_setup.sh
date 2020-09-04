@@ -1,7 +1,5 @@
-#!/usr/bin/env sh
-
-# tikz standalone
+# tikz standalone MWE
 #
 # Requires texlive.
 
-./compile.sh workspace
+./compile.sh workspace &
