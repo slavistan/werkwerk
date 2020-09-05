@@ -7,3 +7,8 @@ server: server.c
 
 client: client.c
 	$(CC) -g client.c -o client
+
+clean:
+	rm -f server client
+
+.PHONY: clean

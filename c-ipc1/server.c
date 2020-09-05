@@ -44,7 +44,8 @@ cleanup(int exitafter) {
     exit(0);
 }
 
-int main(int argc, char** argv) {
+int
+main(int argc, char** argv) {
   char *shm;
   key_t key;
   FILE *file;
@@ -70,7 +71,7 @@ int main(int argc, char** argv) {
     die("shmget() failed:");
 
   // attach shared memory segment to this processes' address space
-  if ((shm = (char*)shmat(shmid, NULL, 0)) == -1)
+  if ((shm = (char*)shmat(shmid, NULL, 0)) == (char*)-1)
     die("shmat() failed:");
 
   // repeatedly override shmem segment
@@ -80,7 +81,6 @@ int main(int argc, char** argv) {
       die("fgets() failed");
     if (shm[strlen(shm)-1] == '\n')
       shm[strlen(shm)-1] = '\0';
-    printf("\n");
   }
 
   // detach shared memory from process
