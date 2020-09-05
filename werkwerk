@@ -54,16 +54,18 @@ _usage() {
 }
 _ls() {
   if [ "$1" = "-h" ]; then
-    echo "Usage: $0
+    cat <<EOF
+Usage: $0
 
-        \r  List all workspace templates. By default, displays all subdirectories found
-        \r  in '/usr/share/werkwerk/', '/usr/local/share/werkwerk/' and
-        \r  '~/.local/share/werkwerk/'. To include additional template directories add
-        \r  their paths to '~/.config/werkwerk/werkwerkrc', one path per line. Empty
-        \r  lines and lines starting with '#' are ignored.
+  List all workspace templates. By default, displays all subdirectories found
+  in '/usr/share/werkwerk/', '/usr/local/share/werkwerk/' and
+  '~/.local/share/werkwerk/'. To include additional template directories add
+  their paths to '~/.config/werkwerk/werkwerkrc', one path per line. Empty
+  lines and lines starting with '#' are ignored.
 
-        \r  '~' in paths found in werkwerkrc are translated to the corresponding HOMEs.
-        \r  Environment variables in the paths do not work yet."
+  Leading '~' in paths found in werkwerkrc are translated to the corresponding
+  \$HOMEs.
+EOF
     return
   fi
 
@@ -95,12 +97,12 @@ _ls() {
       if [  "$list_all" -eq 1 ]; then
         { echo "$line"
           sed '1,1 s/^#\s*//g;q' "$line/$WS_SETUP" 2>/dev/null || echo "No description found." } |
-        paste -d ':' - -
+        paste -d '' - -
       else
         echo "$line"
       fi
     done
-  done | column -s ':' -t
+  done | column -s '' -t
 }
 _cp() {
   if [ "$1" = "-h" ]; then
