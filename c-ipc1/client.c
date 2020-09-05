@@ -62,3 +62,5 @@ main(int argc, char** argv) {
 
   return 0;
 }
+
+// TODO: factor out common code shared by client and server
