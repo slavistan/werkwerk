@@ -153,8 +153,8 @@ _setup() {
         \r  empty.
 
         \r  Example: The default '$0 -s foo,bar \$TEMPLATE \$TARGET' will execute
-        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP foo; )
-        \r           > ( cd \$TARGET; sh \$TEMPLATE/$WS_SETUP bar; )"
+        \r           > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP foo; )
+        \r           > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP bar; )"
     return
   fi
 
@@ -168,7 +168,7 @@ _setup() {
 
   if ls "$1/$WS_SETUP" >/dev/null 2>&1; then
     echo "$stages" | tr ',' '\n' | while read arg; do
-      ( cd $2; sh $1/$WS_SETUP $arg; )
+      ( cd $2; zsh $1/$WS_SETUP $arg; )
     done
   fi
 }
