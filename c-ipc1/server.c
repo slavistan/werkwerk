@@ -9,8 +9,8 @@
 #include <sys/shm.h>
 
 static const int shmsz = 64; /* size of shmem segment in bytes */
-
 static int shmid = -1;
+static char *shm; /* shmem pointer */
 static char keyfile[128] = "\0";
 
 /*
@@ -18,8 +18,10 @@ static char keyfile[128] = "\0";
  */
 void
 cleanup(int exitafter) {
-  if (shmid >= 0)
+  if (shmid >= 0) {
+    shmdt(shm);
     shmctl(shmid, IPC_RMID, NULL);
+  }
   if (access(keyfile, F_OK) != -1)
     remove(keyfile);
   if (exitafter)
@@ -46,7 +48,6 @@ die(const char *fmt, ...) {
 
 int
 main(int argc, char** argv) {
-  char *shm;
   key_t key;
   FILE *file;
 
