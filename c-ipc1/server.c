@@ -14,6 +14,19 @@ static int shmid = -1;
 static char keyfile[128] = "\0";
 
 /*
+ * Free shared memory, delete keyfile.
+ */
+void
+cleanup(int exitafter) {
+  if (shmid >= 0)
+    shmctl(shmid, IPC_RMID, NULL);
+  if (access(keyfile, F_OK) != -1)
+    remove(keyfile);
+  if (exitafter)
+    exit(0);
+}
+
+/*
  * Print error and shut down.
  */
 void
@@ -28,20 +41,7 @@ die(const char *fmt, ...) {
   } else {
     fputc('\n', stderr);
   }
-  exit(1);
-}
-
-/*
- * Free shared memory, delete keyfile.
- */
-void
-cleanup(int exitafter) {
-  if (shmid >= 0)
-    shmctl(shmid, IPC_RMID, NULL);
-  if (access(keyfile, F_OK) != -1)
-    remove(keyfile);
-  if (exitafter)
-    exit(0);
+  cleanup(1);
 }
 
 int
@@ -77,8 +77,12 @@ main(int argc, char** argv) {
   // repeatedly override shmem segment
   while (1) {
     printf("shm current value = '%s'. Override with: ", shm);
-    if (shm != fgets(shm, shmsz, stdin))
-      die("fgets() failed");
+    if (shm != fgets(shm, shmsz, stdin)) {
+      if (ferror(stdin) != 0)
+        die("fgets() failed");
+      else
+        break;
+    }
     if (shm[strlen(shm)-1] == '\n')
       shm[strlen(shm)-1] = '\0';
   }

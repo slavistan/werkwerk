@@ -4,12 +4,18 @@ zsh-xi $TERMINAL <<EOF &
 nvim -p server.c client.c Makefile
 EOF
 
-zsh-xi $TERMINAL <<-EOF &
-echo "server.c\nMakefile" |
-  entr -rcs "make && ./server"
+# NOTE: cannot use 'entr -r' as terminal i/o won't be forwarded to the
+#       child process.
+zsh-xi $TERMINAL <<EOF &
+  entr -cs 'make && ./server' <<-ENTR
+		server.c
+		Makefile
+	ENTR
 EOF
 
 zsh-xi $TERMINAL <<EOF &
-echo "client.c\nMakefile" |
-  entr -rcs "sleep 0.1; make && ./client"
+  entr -rcs 'sleep 1.1; make && ./client' <<-ENTR
+		client.c
+		Makefile
+	ENTR
 EOF
