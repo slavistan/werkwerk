@@ -124,8 +124,7 @@ case "$1" in
     compile
     ;;
   workspace)
-    # TODO(fix): Open nvim within a zsh session. Can't CTRL-z into the shell otherwise.
-    st zsh -c 'nvim '"$INFILE"' '"$TAIL"'; zsh -i' &
+    zsh-xi st<<<"nvim -p $INFILE $TAIL" &
     echo | groff -T pdf > output.pdf
     zathura --fork output.pdf
     st zsh -c "./$TAIL watch -v; zsh -i" &
