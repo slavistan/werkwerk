@@ -1,3 +1,14 @@
+
+# Copy
+
+Options:
++ Overwrite existing files?
+
+2. Setup
+
+
+# 0-sep'd files
+
 **Conventions**
 
 + Subdirectory names use alnums, '-' or '_', but don't start with '-'.

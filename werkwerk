@@ -16,198 +16,201 @@ WS_SETUP='_setup.sh'
 
 MYNAME=${0:A:t}
 _err() {
-  echo "$@" >&2;
+	echo "$@" >&2;
 }
 _isabspath() {
-  if [ "$1" = "-h" ]; then
-    echo "Usage: $0 PATH
+	if [ "$1" = "-h" ]; then
+		echo "Usage: $0 PATH
 
-        \r  Returns 0 iff PATH is an absolute path. PATH need not necessarily exist."
-    return
-  fi
+				\r	Returns 0 iff PATH is an absolute path. PATH need not necessarily exist."
+		return
+	fi
 
-  echo "$1" | grep -q '^/' # Silly, I know ...
+	echo "$1" | grep -q '^/' # Silly, I know ...
 }
 _no_common_lines() {
-  if [ "$1" = "-h" ]; then
-    echo "Usage: $0 STR1 STR2
+	if [ "$1" = "-h" ]; then
+		echo "Usage: $0 STR1 STR2
 
-        \r Returns 0 if strings STR1 and STR2 do not have any lines in common,
-        \r 1 otherwise."
-    return
-  fi
+				\r Returns 0 if strings STR1 and STR2 do not have any lines in common,
+				\r 1 otherwise."
+		return
+	fi
 
-  if [ $(comm -12 <( echo "$1" | sort ) <( echo "$2" | sort ) | wc -l) -eq 0 ]; then
-    return 0
-  fi
-  return 1
+	if [ $(comm -12 <( echo "$1" | sort ) <( echo "$2" | sort ) | wc -l) -eq 0 ]; then
+		return 0
+	fi
+	return 1
 }
 
 
 ### Core functionality
 
 _usage() {
-  echo "Usage: $MYNAME [OPTION...]
+	echo "Usage: $MYNAME [OPTION...]
 
-  TODO(feat): Type out usage.
-    "
+	TODO(feat): Type out usage.
+		"
 }
 _ls() {
-  if [ "$1" = "-h" ]; then
-    cat <<EOF
+	if [ "$1" = "-h" ]; then
+		cat <<EOF
 Usage: $0
 
-  List all workspace templates. By default, displays all subdirectories found
-  in '/usr/share/werkwerk/', '/usr/local/share/werkwerk/' and
-  '~/.local/share/werkwerk/'. To include additional template directories add
-  their paths to '~/.config/werkwerk/werkwerkrc', one path per line. Empty
-  lines and lines starting with '#' are ignored.
+	List all workspace templates. By default, displays all subdirectories found
+	in '/usr/share/werkwerk/', '/usr/local/share/werkwerk/' and
+	'~/.local/share/werkwerk/'. To include additional template directories add
+	their paths to '~/.config/werkwerk/werkwerkrc', one path per line. Empty
+	lines and lines starting with '#' are ignored.
 
-  Leading '~' in paths found in werkwerkrc are translated to the corresponding
-  \$HOMEs.
+	Leading '~' in paths found in werkwerkrc are translated to the corresponding
+	\$HOMEs.
 EOF
-    return
-  fi
+		return
+	fi
 
-  [ "$1" = "-l" ] && { shift; list_all=1; }
+	[ "$1" = "-l" ] && { shift; list_all=1; }
 
-  # Build \n-sep'd list of workspace template directories
-  wwpaths=""
-  for wwpath in /usr/share/werkwerk/ /usr/local/share/werkwerk ~/.local/share/werkwerk; do
-    [ -d "$wwpath" ] && wwpaths+="$wwpath\n"
-  done
-  if [ -f ~/.config/werkwerk/werkwerkrc ]; then
-    cat ~/.config/werkwerk/werkwerkrc | while read line; do
-      echo "$line" | grep -q '^#\|^\s*$' && continue
-      # filter proper paths
-      # TODO(feat): Shell-expand lines from werkwerkrc to allow for envvars.
-      line=$(echo "$line" | sed 's:^~:'"$HOME"':g')
-      echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
-      [ ! -d "$line" ] && { _err "Ignoring non-existent path '$line'."; continue; }
-      wwpaths+="$line\n"
-    done
-  fi
-  wwpaths=$(echo "$wwpaths" | grep -v '^$' | sort | uniq)
+	# Build \n-sep'd list of workspace template directories
+	wwpaths=""
+	for wwpath in /usr/share/werkwerk/ /usr/local/share/werkwerk ~/.local/share/werkwerk; do
+		[ -d "$wwpath" ] && wwpaths+="$wwpath\n"
+	done
+	if [ -f ~/.config/werkwerk/werkwerkrc ]; then
+		cat ~/.config/werkwerk/werkwerkrc | while read line; do
+			echo "$line" | grep -q '^#\|^\s*$' && continue
+			# filter proper paths
+			# TODO(feat): Shell-expand lines from werkwerkrc to allow for envvars.
+			line=$(echo "$line" | sed 's:^~:'"$HOME"':g')
+			echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
+			[ ! -d "$line" ] && { _err "Ignoring non-existent path '$line'."; continue; }
+			wwpaths+="$line\n"
+		done
+	fi
+	wwpaths=$(echo "$wwpaths" | grep -v '^$' | sort | uniq)
 
-  # List all the template directories' subdirectories and enforce simple naming
-  # rules (no whitespaces, no colons) in order to keep parsing simple.
-  echo "$wwpaths" | while read wwpath; do
-    find "$wwpath" -maxdepth 1 -mindepth 1 -type d | while read line; do
-      echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
-      if [  "$list_all" -eq 1 ]; then
-        { echo "$line"
-          sed '1,1 s/^#\s*//g;q' "$line/$WS_SETUP" 2>/dev/null || echo "No description found." } |
-        paste -d '' - -
-      else
-        echo "$line"
-      fi
-    done
-  done | column -s '' -t
+	# List all the template directories' subdirectories and enforce simple naming
+	# rules (no whitespaces, no colons) in order to keep parsing simple.
+	echo "$wwpaths" | while read wwpath; do
+		find "$wwpath" -maxdepth 1 -mindepth 1 -type d | while read line; do
+			echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
+			if [	"$list_all" -eq 1 ]; then
+				{ echo "$line"
+					sed '1,1 s/^#\s*//g;q' "$line/$WS_SETUP" 2>/dev/null || echo "No description found." } |
+				paste -d '' - -
+			else
+				echo "$line"
+			fi
+		done
+	done | column -s '' -t
 }
 _cp() {
-  if [ "$1" = "-h" ]; then
-    echo "Usage: $0 [-f] TEMPLATE TARGET
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		cat <<-EOF
+			Usage: $0 [-f] TEMPLATE TARGET
 
-        \r  Copy files from template to target directory. By default, existing files
-        \r  in the target directory are not overwritten and the copy is rejected
-        \r  as a whole if existing filenames collide. Use the '-f' flag to force
-        \r  overwriting existing files.
+			Copy files from template to target directory. By default, existing files
+			in the target directory are not overwritten and the copy is rejected
+			as a whole if existing filenames collide. Use the '-f' flag to force
+			overwriting existing files.
 
-        \r  Every file in the template directory is copied except for the '$WS_SETUP'
-        \r  where it exists. 'TEMPLATE' and 'TARGET' must be absolute paths. 'TARGET'
-        \r  will be created if it does not exist."
-    return
-  fi
+			Every file in the template directory is copied except for the '$WS_SETUP'
+			where it exists. 'TEMPLATE' and 'TARGET' must be absolute paths. 'TARGET'
+			will be created if it does not exist.
+		EOF
+		return
+	fi
 
-  # parse opts
-  [ "$1" = "-f" ] && { shift; force=1; }
+	# parse opts
+	[ "$1" = "-f" ] && { shift; force=1; }
 
-  # health check
-  _isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
-  _ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
-  _isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
+	# health check
+	_isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
+	_ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
+	_isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
 
-  # create target directory, if it does not exist
-  mkdir -p "$2"
+	# create target directory, if it does not exist
+	mkdir -p "$2"
 
-  # check for file collisions and abort
-  if [ ! "$force" -eq 1 ]; then
-    tocopy="$(find "$1" -mindepth 1 -type f -printf '%P\n')"
-    existing="$(find "$2" -mindepth 1 -type f -printf '%P\n')"
-    if ! _no_common_lines "$tocopy" "$existing"; then
-      _err "Won't overwrite existing files. Abort."
-      return 1
-    fi
-  fi
+	# check for file collisions and abort
+	if [ ! "$force" -eq 1 ]; then
+		tocopy="$(find "$1" -mindepth 1 -type f -printf '%P\n')"
+		existing="$(find "$2" -mindepth 1 -type f -printf '%P\n')"
+		if ! _no_common_lines "$tocopy" "$existing"; then
+			_err "Won't overwrite existing files. Abort."
+			return 1
+		fi
+	fi
 
-  cp -rf "$1"/* "$2"
+	cp -rf "$1"/* "$2"
 }
 _setup() {
-  if [ "$1" = "-h" ]; then
-    echo "Usage: $0 [-s [ARG1,ARG2,...]] TEMPLATE TARGET
+	if [ "$1" = "-h" ]; then
+		echo "Usage: $0 [-s [ARG1,ARG2,...]] TEMPLATE TARGET
 
-        \r  Execute setup stages for workspace template TEMPLATE in target directory
-        \r  TARGET: If the workspace template contains a file name '$WC_SETUP', the
-        \r  file is shell-executed inside the target directory for every value in the
-        \r  comma-sep'd ARG* list, which is passed as \$1. By default, the list is
-        \r  empty.
+				\r	Execute setup stages for workspace template TEMPLATE in target directory
+				\r	TARGET: If the workspace template contains a file name '$WC_SETUP', the
+				\r	file is shell-executed inside the target directory for every value in the
+				\r	comma-sep'd ARG* list, which is passed as \$1. By default, the list is
+				\r	empty.
 
-        \r  Example: The default '$0 -s foo,bar \$TEMPLATE \$TARGET' will execute
-        \r           > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP foo; )
-        \r           > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP bar; )"
-    return
-  fi
+				\r	Example: The default '$0 -s foo,bar \$TEMPLATE \$TARGET' will execute
+				\r					 > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP foo; )
+				\r					 > ( cd \$TARGET; zsh \$TEMPLATE/$WS_SETUP bar; )"
+		return
+	fi
 
-  # parse opts & sanity check
-  [ "$1" = "-s" ] && { stages="$2"; shift 2 } || stages=""
+	# parse opts & sanity check
+	[ "$1" = "-s" ] && { stages="$2"; shift 2 } || stages=""
 
-  # health check
-  _isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
-  _ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
-  _isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
+	# health check
+	_isabspath "$1" || { _err "TEMPLATE '$1' is not an absolute path."; return 1; }
+	_ls | grep -q -F "$1" || { _err "TEMPLATE '$1' is not among the templates."; return 1; }
+	_isabspath "$2" || { _err "TARGET '$2' is not an absolute path."; return 1; }
 
-  if ls "$1/$WS_SETUP" >/dev/null 2>&1; then
-    echo "$stages" | tr ',' '\n' | while read arg; do
-      ( cd $2; zsh $1/$WS_SETUP $arg; )
-    done
-  fi
+	if ls "$1/$WS_SETUP" >/dev/null 2>&1; then
+		echo "$stages" | tr ',' '\n' | while read arg; do
+			( cd $2; zsh $1/$WS_SETUP $arg; )
+		done
+	fi
 }
 _interactive() {
-  if [ "$1" = "-h" ]; then
-    echo "Usage: $0
+	if [ "$1" = "-h" ]; then
+		echo "Usage: $0
 
-        \r  Let user choose a workspace template from a dmenu selection."
-    return
-  fi
+				\r	Let user choose a workspace template from a dmenu selection."
+		return
+	fi
 
-  _ls -l | dmenu -l 15 -i -p 'Select template: ' | cut -d ' ' -f 1 ||
-    { _err 'Aborted by user.'; return 1; }
+	_ls -l | dmenu -l 15 -i -p 'Select template: ' | cut -d ' ' -f 1 ||
+		{ _err 'Aborted by user.'; return 1; }
 }
 
 case "$1" in
-  -h|--help) _usage ;;
-  ls) shift; _ls "$@" ;;
-  @) shift; "$@" ;;
-  *)
-    local -a stages; stages=( )
-    local -a template; template=( -t )
-    local -a flags; flags=( )
-    local -a target; target=( -g )
-    zparseopts -K -- t:=template s:=stages f=flags g:=target || return 1
-    if [ "$template[2]" = "" ]; then
-      template[2]=$(_interactive) || return 1
-    fi
-    if [ "$target[2]" = "" ]; then
-      target[2]=$(mktemp -d -t "${MYNAME}_XXXXXX")
-    else
-      mkdir -p "$target[2]" || { _err Cannot create directory '"$target[2]"'.; return 1; }
-      target[2]=$(realpath "$target[2]")
-    fi
+	-h|--help) _usage ;;
+	ls) shift; _ls "$@" ;;
+	@) shift; "$@" ;;
+	*)
+		local -a stages; stages=( )
+		local -a template; template=( -t )
+		local -a flags; flags=( )
+		local -a target; target=( -g )
+		zparseopts -K -- t:=template s:=stages f=flags g:=target || return 1
+		if [ "$template[2]" = "" ]; then
+			template[2]=$(_interactive) || return 1
+		fi
+		if [ "$target[2]" = "" ]; then
+			target[2]=$(mktemp -d -t "${MYNAME}_XXXXXX")
+		else
+			mkdir -p "$target[2]" || { _err Cannot create directory '"$target[2]"'.; return 1; }
+			target[2]=$(realpath "$target[2]")
+		fi
 
-    { [[ "$flags" =~ 'f' ]] && _cp -f "$template[2]" "$target[2]" || _cp "$template[2]" "$target[2]" } &&
-    { _setup -s "$stages[2]" "$template[2]" "$target[2]" } || return 1
-    ;;
+		{ [[ "$flags" =~ 'f' ]] && _cp -f "$template[2]" "$target[2]" || _cp "$template[2]" "$target[2]" } &&
+		{ _setup -s "$stages[2]" "$template[2]" "$target[2]" } || return 1
+		;;
 esac
 
 # TODO(feat): fuzzy interactive dmenu search
 # TODO(feat): directory names may contain whitespaces
+# TODO: Rename tempdir to 'werkwerk-<TEMPLATE>'
