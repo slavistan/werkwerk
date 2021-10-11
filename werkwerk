@@ -134,15 +134,15 @@ _cp() {
 
 	# check for file collisions and abort
 	if [ ! "$force" -eq 1 ]; then
-		tocopy="$(find "$1" -mindepth 1 -type f -printf '%P\n')"
-		existing="$(find "$2" -mindepth 1 -type f -printf '%P\n')"
+		tocopy="$(find "$1" -mindepth 1 -printf '%P\n')"
+		existing="$(find "$2" -mindepth 1 -printf '%P\n')"
 		if ! _no_common_lines "$tocopy" "$existing"; then
 			_err "Won't overwrite existing files. Abort."
 			return 1
 		fi
 	fi
 
-	cp -rf "$1"/* "$2"
+	cp -rT "$1" "$2" # cp -T to copy hidden files
 }
 _setup() {
 	if [ "$1" = "-h" ]; then

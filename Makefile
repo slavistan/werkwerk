@@ -5,7 +5,7 @@ all:
 
 install: uninstall
 	mkdir -p $(PREFIX)/share/werkwerk
-	find '.' -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec cp -R {} $(PREFIX)/share/werkwerk \;
+	find '.' -maxdepth 1 -mindepth 1 -type d -not -name '\.git' -exec cp -r {} $(PREFIX)/share/werkwerk \;
 	mkdir -p $(PREFIX)/bin
 	cp -f werkwerk $(PREFIX)/bin
 	chmod 755 $(PREFIX)/bin/werkwerk
