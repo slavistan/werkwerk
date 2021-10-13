@@ -1,0 +1,19 @@
+{
+    "name": "werkwerk_bpb9r0",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dest/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "npx tsc && node dest/index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@js-soft/eslint-config-ts": "^1.4.0",
+        "@types/node": "^16.10.3",
+        "eslint": "^7.32.0",
+        "typescript": "^4.4.3"
+    }
+}

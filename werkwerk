@@ -92,7 +92,7 @@ EOF
 	# List all the template directories' subdirectories and enforce simple naming
 	# rules (no whitespaces, no colons) in order to keep parsing simple.
 	echo "$wwpaths" | while read wwpath; do
-		find "$wwpath" -maxdepth 1 -mindepth 1 -type d | while read line; do
+		find "$wwpath/" -maxdepth 1 -mindepth 1 -type d | while read line; do
 			echo "$line" | grep -q "$PATH_RE" && { _err "Ignoring invalid path '$line'."; continue; }
 			if [	"$list_all" -eq 1 ]; then
 				{ echo "$line"
